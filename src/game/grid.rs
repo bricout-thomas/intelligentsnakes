@@ -1,5 +1,3 @@
-use super::head::Head;
-
 pub struct Grid {
     pub field: [[Tile; 80]; 50],
 }
@@ -13,7 +11,7 @@ impl Grid {
                     |_| {
                         let r: u8 = random();
                         match r {
-                            ..= 4 => Tile::Egg,
+                            ..= 4 => Tile::Apple,
                             _ => Tile::Empty,
                         }
                     }
@@ -21,9 +19,16 @@ impl Grid {
             ),
         }
     }
+    
+    pub fn access_mut<'a>(&'a mut self, coord: (usize, usize)) -> &'a mut Tile {
+        return &mut self.field[coord.0][coord.1];
+    }
+    pub fn access(&self, coord: (usize, usize)) -> Tile {
+        return self.field[coord.0][coord.1];
+    }
 }
 
-#[derive(Default)]
+#[derive(Default, Clone, Copy)]
 pub enum Tile {
     #[default]
     Empty,

@@ -13,6 +13,7 @@ doesn't suppot reading state from file yet
 Options:
     -h display this help message
     -v get current version
+    -p spawn human controllable player
 ";
 
 const VERSION_MESSAGE: &str = "running intelligent snakes lpha version, subject to constant changes";
@@ -22,11 +23,13 @@ fn main() {
     let mut args = env::args();
     let _runpath = args.next().unwrap();
     let mut filepath: String = String::new();
+    let mut player = false;
     // read arguments
     'argread: while let Some(arg) = args.next() {
         match arg.as_str() {
             "-v" => { println!("{}", VERSION_MESSAGE) },
             "-h" => { println!("{}", HELP_MESSAGE) },
+            "-p" => { player = true; },
             _ => { filepath = arg; break 'argread }
         }
     }
@@ -41,6 +44,6 @@ fn main() {
         .with_title("intelligent snakes")
         .with_fps_cap(10.)
         .build().expect("error setting up bterm context");
-    let gs = State::new();
-    main_loop(context, gs);
+    let gs = State::new(player);
+    main_loop(context, gs).unwrap();
 }
