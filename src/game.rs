@@ -58,7 +58,17 @@ impl State {
 impl GameState for State {
     fn tick(&mut self, ctx: &mut BTerm) {
         for head in self.heads.iter_mut() {
-            head.think(());
+            let close_positions: [(isize, isize); 8] = [
+                (-1, -1), (0, -1), (1, -1),
+                (-1, 0),           (1, 0),
+                (-1, 1), (0, 1), (1, 1)];
+            let mut sight = Vec::<f32>::with_capacity(16);
+            for (x, y) in close_positions.into_iter() {
+                sight.push(self.grid.access(
+                    ((x+head.position.0 as isize) as usize, (y+head.position.1 as isize) as usize)
+                ).match_val());
+            }
+            head.think(sight);
         }
         // Open second loop to avoid heads modifying game state conflicting with heads accessing sight
         let mut kill_list = vec!();
@@ -159,7 +169,7 @@ impl GameState for State {
         }
 
         // birth eggs
-        let n_birth = random::<u8>() as usize * self.eggs.len() / 256;
+        let n_birth = random::<u8>() as usize * (self.eggs.len() + 1) / 256;
         for _ in 0..n_birth {
             if let Some((pos, genome)) = self.eggs.pop_front() {
                 *self.grid.access_mut(pos) = Tile::Head;
@@ -174,6 +184,8 @@ impl GameState for State {
         }
 
         // display new grid to screen
+        // Would it be more optimized to do that from eggs and heads
+        // Or to use store the string in a buffer before calling ctx.print to print everything at once?
         for (y, line) in self.grid.field.iter().enumerate() {
             for (x, cell) in line.iter().enumerate() {
                 ctx.print(

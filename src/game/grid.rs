@@ -37,3 +37,13 @@ pub enum Tile {
     Egg,
     Head,
 }
+
+impl Tile {
+    pub fn match_val(&self) -> f32 {
+        match self {
+            Tile::Apple | Tile::Egg => 1.,
+            Tile::Body | Tile::Head => -1.,
+            _ => 0.,
+        }
+    }
+}
