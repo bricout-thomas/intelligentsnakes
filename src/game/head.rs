@@ -26,7 +26,7 @@ pub struct Genome {
 }
 
 impl Genome {
-    fn copy(&self) -> Self {
+    pub fn copy(&self) -> Self {
         Self { 
             synapses: self.synapses.iter().map(
                     |s| {s.clone()} // TODO: add mutations

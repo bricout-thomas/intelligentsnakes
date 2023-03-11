@@ -3,6 +3,7 @@ use std::collections::VecDeque;
 use bracket_terminal::prelude::*;
 
 mod grid; use grid::{Grid, Tile};
+use rand::random;
 
 use crate::game::head::{Direction, Genome};
 
@@ -13,7 +14,7 @@ pub struct State {
     pub player: Option<Head>,
     pub grid: Grid,
     pub heads: Vec<Head>,
-    pub eggs: Vec<()>,
+    pub eggs: VecDeque<((usize, usize), Genome)>,
 }
 
 impl State {
@@ -22,10 +23,9 @@ impl State {
             player: None,
             grid: Grid::new(),
             heads: vec!(),
-            eggs: vec!()
+            eggs: VecDeque::new()
         };
 
-        use rand::random;
         let number_of_snakes = 10;
         for _ in 0..number_of_snakes {
             let x: usize = random::<usize>() % 50;
@@ -57,7 +57,6 @@ impl State {
 
 impl GameState for State {
     fn tick(&mut self, ctx: &mut BTerm) {
-        use head::Direction;
         for head in self.heads.iter_mut() {
             head.think(());
         }
@@ -86,6 +85,17 @@ impl GameState for State {
             if !apple {
                 let tail_end = head.body.pop_front().unwrap(); // unwrap safe because we just pushed something
                 *self.grid.access_mut(tail_end) = Tile::Empty;
+            } else {
+                if random::<u8>() <= 64 {
+                    let tail_end = head.body.pop_front().unwrap(); // unwrap safe because we just pushed something
+                    *self.grid.access_mut(tail_end) = Tile::Egg;
+                    self.eggs.push_back((tail_end,
+                        match &head.genome {
+                            Some(genome) => genome.copy(),
+                            None => Genome::new(),
+                        })
+                    )
+                }
             }
             *self.grid.access_mut(head.position) = Tile::Head;
             if kill_snake {
@@ -146,6 +156,21 @@ impl GameState for State {
                 }
             }
             if kill_player { self.player = None; } // here because of borrow checker
+        }
+
+        // birth eggs
+        let n_birth = random::<u8>() as usize * self.eggs.len() / 256;
+        for _ in 0..n_birth {
+            if let Some((pos, genome)) = self.eggs.pop_front() {
+                *self.grid.access_mut(pos) = Tile::Head;
+                self.heads.push(Head {
+                    position: pos,
+                    body: VecDeque::new(),
+                    direction: Direction::Top,
+                    brainstate: None,
+                    genome: Some(genome),
+                })
+            }
         }
 
         // display new grid to screen
