@@ -4,6 +4,8 @@ use bracket_terminal::prelude::*;
 
 mod grid; use grid::{Grid, Tile};
 
+use crate::game::head::{Direction, Genome};
+
 use self::head::Head;
 mod head;
 
@@ -22,6 +24,22 @@ impl State {
             heads: vec!(),
             eggs: vec!()
         };
+
+        use rand::random;
+        let number_of_snakes = 10;
+        for _ in 0..number_of_snakes {
+            let x: usize = random::<usize>() % 50;
+            let y: usize = random::<usize>() % 80;
+            *state.grid.access_mut((x, y)) = Tile::Head;
+            state.heads.push(Head {
+                position: (x, y),
+                body: VecDeque::new(),
+                direction: Direction::Top,
+                brainstate: None,
+                genome: Some(Genome::new())
+            })
+        }
+
         if player {
             let (x, y) = (40, 25);
             state.player = Some(Head { 
@@ -44,7 +62,8 @@ impl GameState for State {
             head.think(());
         }
         // Open second loop to avoid heads modifying game state conflicting with heads accessing sight
-        for head in self.heads.iter_mut() {
+        let mut kill_list = vec!();
+        for (i, head) in self.heads.iter_mut().enumerate() {
             let mut kill_snake = false;
             *self.grid.access_mut(head.position) = Tile::Body;
             head.body.push_back(head.position);
@@ -75,12 +94,16 @@ impl GameState for State {
                     *self.grid.access_mut(*pos) = Tile::Apple;
                 }
             }
-            if kill_snake { self.player = None; } // here because of borrow checker
+            if kill_snake { kill_list.push(i) } // here because of borrow checker
+        }
+        while let Some(i) = kill_list.pop() { // so that the index of snakes don't change before we try to kill them
+            self.heads.swap_remove(i);
         }
 
         {   // player movement ( direction change and movement )
             // I should find a cleaner way to do that, not just repeat every piece of logic
             // but it works so yas
+            // TODO: rewrite to use access_mut instead of indexing
             let mut kill_player = false;
             if let Some(player_head) = &mut self.player {
                 if let Some(keypress) = ctx.key {

@@ -6,7 +6,7 @@ pub struct Head {
     pub direction: Direction,
 
     pub brainstate: Option<BrainState>,
-    pub genome: Option<Vec<Synapse>>,
+    pub genome: Option<Genome>,
 }
 
 #[derive(Clone, Copy)]
@@ -14,30 +14,49 @@ pub enum Direction {
     Left, Right, Bottom, Top
 }
 
+#[derive(Clone)]
 pub struct Synapse {
     input_index: u8,
     output_index: u8,
     weight: f32,
 }
 
+pub struct Genome {
+    synapses: Vec<Synapse>,
+}
+
+impl Genome {
+    fn copy(&self) -> Self {
+        Self { 
+            synapses: self.synapses.iter().map(
+                    |s| {s.clone()} // TODO: add mutations
+            ).collect(),
+        }
+    }
+    pub fn new() -> Self {
+        Self {
+            synapses: vec!(),
+        }
+    }
+}
+
 pub type BrainState = [f32; 32];
-// last four neurons are outputs
+// last four neurons are outputsout
 // first sixteen neurons are inputs
 
 impl Head {
     pub fn think(&mut self, sight: ()) {
         // unwrap brainstate and genome
         let Some(genome) = &self.genome else { return; };
-        match self.brainstate {
-            Some(_brainstate) => {},
-            None => { self.brainstate = Default::default();  },
+        if let None = self.brainstate {
+            self.brainstate = Some(Default::default());
         }
         let brainstate = &mut self.brainstate.unwrap(); // Safe unwrap
         // TODO read sight
 
         // use the genome
-        for synapse in genome.iter() {
-            brainstate[synapse.output_index as usize] = brainstate[synapse.output_index as usize] * synapse.weight;
+        for synapse in genome.synapses.iter() {
+            brainstate[synapse.output_index as usize] += brainstate[synapse.input_index as usize] * synapse.weight;
         }
         // actualize self.direction according to output neurons
         let mut greater_v = f32::MIN;

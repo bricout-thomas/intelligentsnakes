@@ -19,12 +19,12 @@ impl Grid {
             ),
         }
     }
-    
+
     pub fn access_mut<'a>(&'a mut self, coord: (usize, usize)) -> &'a mut Tile {
-        return &mut self.field[coord.0][coord.1];
+        return &mut self.field[coord.0 % 50][coord.1 % 80];
     }
     pub fn access(&self, coord: (usize, usize)) -> Tile {
-        return self.field[coord.0][coord.1];
+        return self.field[coord.0 % 50][coord.1 % 80];
     }
 }
 
